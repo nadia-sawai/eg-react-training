@@ -1,39 +1,72 @@
-# ルーティング
+# 共通レイアウト（共通テンプレート）
 
-- [ ] URLによるコンポーネントの出し分けを学ぶ
+- [ ] HeaderやFooterなど共通レイアウトの実装を学ぶ
 
-## インストール
-```$ npm install react-router-dom```
-
-## ルーティング設定
-
-### Step1 ページコンポーネント作成
-```src/components/pages/``` に ```Home.tsx``` 追加  
+## Headerコンポーネント作成
+```src/components/templates/``` に ```Header.tsx``` 追加  
 ```
-const Home = () => {
+const Header = () => {
   return (
-    <div>Home</div>
+    <div>Header</div>
   )
 }
 
-export default Home
-```  
+export default Header
+```
 
-### Step2 ルーティングファイル作成
-```src/router/index.tsx``` 追加
+## Footerコンポーネント作成
+```src/components/templates/``` に ```Footer.tsx``` 追加  
+```
+const Footer = () => {
+  return (
+    <div>Footer</div>
+  )
+}
+
+export default Footer
+```
+
+## Layoutコンポーネント作成
+```src/components/templates/``` に ```Layout.tsx``` 追加  
+LayoutコンポーネントでHeader, Footerコンポーネントを呼び出す  
+※ Outlet を指定したコンポーネントをルーティングに設定しておくと、本来呼び出されるコンポーネントが```<Outlet />``` と置き換わる形でレンダリングされる
+```
+import Header from "./Header";
+import Footer from "./Footer";
+import { Outlet } from "react-router-dom";
+
+const Layout = () => {
+  return (
+    <>
+      <Header />
+      <Outlet />
+      <Footer />
+    </>
+  );
+};
+
+export default Layout
+```
+
+## ルーティングにLayoutコンポーネントを指定
+```src/router/index.tsx``` にLayoutコンポーネントを指定  
+共通レイアウトを使用したい箇所にelementを指定
 ```
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "../components/pages/Home"
+import ErrorBoundary from "../components/pages/ErrorBoundary";
+import Layout from "../components/templates/Layout";
 
-// createBrowserRouter() でオブジェクトを作成
+
 const router = createBrowserRouter([
   {
     path: "/",
-    // error時の処理（これがないと怒られる）
+    // elementに共通レイアウトを指定（下記の場合、Layoutコンポーネントの<Outlet />の箇所に、<Home />がレンダリングされる）
+    element: <Layout />,
+    // pathがマッチしない場合にerrorElement表示
     errorElement: <ErrorBoundary />,
     children: [
       {
-        // indexはpathで指定した階層（今回の場合は/）
         index: true,
         element: <Home />
       },
@@ -41,44 +74,5 @@ const router = createBrowserRouter([
   }
 ]);
 
-// RouterProvider の routerに渡す
 export const Router = () => <RouterProvider router={router} />;
-```
-
-### Step3 エラーコンポーネント追加
-```src/components/pages/``` に ```Errorboundary.tsx``` 追加  
-```
-import { useRouteError, isRouteErrorResponse } from "react-router-dom";
-
-const ErrorBoundary = () => {
-  const error = useRouteError();
-  // errorがない場合はreturn nullを返す（returnだけだと呼び出し側で怒られる
-  // isRouteErrorResponseはエラーがある場合はtrueになる
-  if (!isRouteErrorResponse(error)) return null;
-
-  return (
-    <>
-      {error.status === 404 && <div>404error</div>}
-      {error.status === 401 && <div>401error</div>}
-    </>
-  );
-};
-export default ErrorBoundary;
-```
-
-### Step4 Routeコンポーネント設置
-main.tsx で作成したrouterコンポーネントを呼び出す  
-※ main.tsxに Step2 の内容を記述しても良いが極力コンポーネントを分けるため分離
-
-```
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { Router } from "./router";
-import './index.css'
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <Router />
-  </React.StrictMode>,
-)
 ```
