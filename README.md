@@ -1,30 +1,84 @@
-# React + TypeScript + Vite
+# ルーティング
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+- [ ] URLによるコンポーネントの出し分けを学ぶ
 
-Currently, two official plugins are available:
+## インストール
+```$ npm install react-router-dom```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ルーティング設定
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
+### Step1 ページコンポーネント作成
+```src/components/pages/``` に ```Home.tsx``` 追加  
+```
+const Home = () => {
+  return (
+    <div>Home</div>
+  )
 }
+
+export default Home
+```  
+
+### Step2 ルーティングファイル作成
+```src/router/index.tsx``` 追加
+```
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Home from "../components/pages/Home"
+
+// createBrowserRouter() でオブジェクトを作成
+const router = createBrowserRouter([
+  {
+    path: "/",
+    // error時の処理（これがないと怒られる）
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        // indexはpathで指定した階層（今回の場合は/）
+        index: true,
+        element: <Home />
+      },
+    ]
+  }
+]);
+
+// RouterProvider の routerに渡す
+export const Router = () => <RouterProvider router={router} />;
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+### Step3 エラーコンポーネント追加
+```src/components/pages/``` に ```Errorboundary.tsx``` 追加  
+```
+import { useRouteError, isRouteErrorResponse } from "react-router-dom";
+
+const ErrorBoundary = () => {
+  const error = useRouteError();
+  // errorがない場合はreturn nullを返す（returnだけだと呼び出し側で怒られる
+  // isRouteErrorResponseはエラーがある場合はtrueになる
+  if (!isRouteErrorResponse(error)) return null;
+
+  return (
+    <>
+      {error.status === 404 && <div>404error</div>}
+      {error.status === 401 && <div>401error</div>}
+    </>
+  );
+};
+export default ErrorBoundary;
+```
+
+### Step4 Routeコンポーネント設置
+main.tsx で作成したrouterコンポーネントを呼び出す  
+※ main.tsxに Step2 の内容を記述しても良いが極力コンポーネントを分けるため分離
+
+```
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { Router } from "./router";
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <Router />
+  </React.StrictMode>,
+)
+```
