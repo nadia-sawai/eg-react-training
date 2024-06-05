@@ -24,6 +24,7 @@ const StyledLink = styled(Link)`
 
 const pagesPath = [
   { id: 1, path: "/", name: "Home" },
+  { id: 2, path: "/users", name: "ユーザー一覧" },
 ];
 
 function Logo() {

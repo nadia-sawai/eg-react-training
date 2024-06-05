@@ -1,66 +1,66 @@
-# スタイルの設定（styled-component）
+# ページ追加時のルーティング設定
 
-- [ ] スタイルの指定を学ぶ
+- [ ] ページ追加のルーティング設定を学ぶ
 
-## インストール
-```$ npm install styled-components```
-
-## Header
-- ロゴとナビゲーションを表示してスタイルをあてる
+## User一覧ページの追加
+- ユーザー一覧ページを作成し、ナビゲーションにリンクを追加する  
+  
+### Step1
+```src/components/pages/``` に ```Users.tsx``` 追加  
 ```
-import { Link } from "react-router-dom";
-import styled from "styled-components";
-
-// styleを指定したコンポーネントとして利用できる
-const HeaderBlock = styled.header`
-  background-color: #000;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-`;
-const NavBlock = styled.nav`
-  display: flex;
-  list-style: none;
-  gap: 20px;
-  margin-left: auto;
-  li {
-    font-size: 18px;
-  }
-`;
-// react-router-domの<Link />要素などにスタイルをあてる場合はstyled()内に指定する
-const StyledLink = styled(Link)`
-  color: white;
-`;
-
-const pagesPath = [
-  { id: 1, path: "/", name: "Home" },
-];
-
-function Logo() {
+const Users = () => {
   return (
-    <Link to={'/'}><img src="/images/logo.png" /></Link>
+    <div>Users</div>
   )
 }
 
-const Header = () => {
-  return (
-    <HeaderBlock>
-      <Logo />
-      <NavBlock>
-        {pagesPath.map((pagePath) => {
-          return (
-            <li key={pagePath.id}>
-              <StyledLink to={pagePath.path}>{pagePath.name}</StyledLink>
-            </li>
-          );
-        })}
-      </NavBlock>
-    </HeaderBlock>
-  );
-};
-
-export default Header
+export default Users
 ```
+
+### Step2
+- Header.tsx 内のpagesPathにusersのリンクを追加する
+```
+const pagesPath = [
+  { id: 1, path: "/", name: "Home" },
+  { id: 2, path: "/users", name: "ユーザー一覧" },
+];
+```
+
+### Step3
+- /usersでアクセスした際にUsersコンポーネントを表示させるためルーティングの設定をする  
+```src/router/index.tsx```
+```
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Home from "../components/pages/Home"
+import Users from "../components/pages/Users" // 追記
+import ErrorBoundary from "../components/pages/ErrorBoundary";
+import Layout from "../components/templates/Layout";
+
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    // elementに共通レイアウトを指定（下記の場合、Layoutコンポーネントの<Outlet />の箇所に、<Home />がレンダリングされる）
+    element: <Layout />,
+    // pathがマッチしない場合にerrorElement表示
+    errorElement: <ErrorBoundary />,
+    children: [
+      {
+        index: true,
+        element: <Home />
+      },
+      // 追記
+      {
+        path: "users",
+        element: <Users />
+      },
+    ]
+  }
+]);
+
+export const Router = () => <RouterProvider router={router} />;
+```
+
 
 ## Footer
 ```

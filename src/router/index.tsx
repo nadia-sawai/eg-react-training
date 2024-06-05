@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "../components/pages/Home"
+import Users from "../components/pages/Users"
 import ErrorBoundary from "../components/pages/ErrorBoundary";
 import Layout from "../components/templates/Layout";
 
@@ -15,6 +16,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <Home />
+      },
+      {
+        path: "users",
+        element: <Users />
       },
     ]
   }
