@@ -1,175 +1,131 @@
-# ページ追加時のルーティング設定
+# props
 
-- [ ] ページ追加のルーティング設定を学ぶ
+- [ ] propsの受け渡しをコンポーネントを作成しながら学ぶ
+- [ ] 受け取ったpropによる条件分岐を学ぶ
 
-## User一覧ページの追加
-- ユーザー一覧ページを作成し、ナビゲーションにリンクを追加する  
-  
+## 属性を指定して値を渡す場合
 ### Step1
-```src/components/pages/``` に ```Users.tsx``` 追加  
+- ページタイトルを表示する共通コンポーネントを作成
+- indexに集約してエクスポートする方法で実装  
+
+```src/components/ui/Title``` に ```PageTitle.tsx``` を作成  
 ```
-const Users = () => {
+// 属性としてpropsを受け取る
+import styled from "styled-components";
+
+type PageTitleProps = {
+  title: string
+}
+
+const PageTitleBlock = styled.h1`
+  font-size: 2.6rem;
+  border-bottom: 1px solid #000;
+  margin-bottom: 40px;
+`;
+
+const PageTitle = (props:PageTitleProps) => {
+  const { title } = props
+
   return (
-    <div>Users</div>
+    <PageTitleBlock>{title}</PageTitleBlock>
   )
 }
 
-export default Users
+export default PageTitle
 ```
+```src/components/ui/Title``` に ```index.tsx``` を作成  
+```
+export {default as PageTitle} from './PageTitle';
+```
+
 
 ### Step2
-- Header.tsx 内のpagesPathにusersのリンクを追加する
+- 使用例（Home.tsx）
 ```
-const pagesPath = [
-  { id: 1, path: "/", name: "Home" },
-  { id: 2, path: "/users", name: "ユーザー一覧" },
-];
-```
+import { PageTitle } from "../ui/Title"
 
-### Step3
-- /usersでアクセスした際にUsersコンポーネントを表示させるためルーティングの設定をする  
-```src/router/index.tsx```
-```
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Home from "../components/pages/Home"
-import Users from "../components/pages/Users" // 追記
-import ErrorBoundary from "../components/pages/ErrorBoundary";
-import Layout from "../components/templates/Layout";
-
-
-const router = createBrowserRouter([
-  {
-    path: "/",
-    // elementに共通レイアウトを指定（下記の場合、Layoutコンポーネントの<Outlet />の箇所に、<Home />がレンダリングされる）
-    element: <Layout />,
-    // pathがマッチしない場合にerrorElement表示
-    errorElement: <ErrorBoundary />,
-    children: [
-      {
-        index: true,
-        element: <Home />
-      },
-      // 追記
-      {
-        path: "users",
-        element: <Users />
-      },
-    ]
-  }
-]);
-
-export const Router = () => <RouterProvider router={router} />;
-```
-
-
-## Footer
-```
-import styled from "styled-components";
-
-const FooterBlock = styled.footer`
-  background-color: #000;
-  padding: 10px;
-  margin-top: auto;
-  color: #fff;
-  text-align: center;
-`;
-
-const Footer = () => {
-  return <FooterBlock>&copy; hoge, inc</FooterBlock>;
-};
-
-export default Footer
-```
-
-## Layout
-```
-import Header from "./Header";
-import Footer from "./Footer";
-import { Outlet } from "react-router-dom";
-import styled from "styled-components";
-
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-`;
-
-const Layout = () => {
+const Home = () => {
   return (
-    <Wrapper>
-      <Header />
-      <Outlet />
-      <Footer />
-    </Wrapper>
-  );
-};
-
-export default Layout
-```
-
-# その他のスタイル設定
-## CSS Module
-コンポーネント単位でローカルスコープでのスタイル定義が可能  
-そのためスタイルの競合が回避できる  
-  
-### 使用例
-#### Step1
-Header.tsxと同階層に、header.modules.css ファイルを作成  
-通常のcssと同じように記述できる  
-```
-.headerBlock {
-  background-color: #000;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-}
-.navBlock {
-  display: flex;
-  list-style: none;
-  gap: 20px;
-  margin-left: auto;
-}
-.navBlock li {
-  font-size: 18px;
-}
-.styledLink {
-  color: white;
-}
-```
-
-#### Step2
-使用するコンポーネントで呼び出して要素に指定  
-Header.tsx
-```
-import { Link } from "react-router-dom";
-import styles from "./header.modules.css";
-
-const pagesPath = [
-  { id: 1, path: "/", name: "Home" },
-];
-
-function Logo() {
-  return (
-    <Link className={styles.styledLink} to={'/'}><img src="/images/logo.png" /></Link>
+    <PageTitle title="Home" />
   )
 }
 
-const Header = () => {
-  return (
-    <header className={styles.headerBlock}>
-      <Logo />
-      <nav className={styles.navBlock}>
-        {pagesPath.map((pagePath) => {
-          return (
-            <li key={pagePath.id}>
-              <Link className={styles.styledLink} to={pagePath.path}>{pagePath.name}</Link>
-            </li>
-          );
-        })}
-      </nav>
-    </header>
-  );
-};
+export default Home
+```
 
-export default Header
+## childrenとして値を渡す場合
+### Step1
+- ボタンを表示する共通コンポーネントを作成
+```src/components/ui/Button/index.tsx``` を作成  
+children内にレンダリングされる
+```
+import styled from "styled-components";
+
+// ? をつけることによってはプロパティが任意になる（なくても怒られない）
+type ButtonProps = {
+  variant?: "primary" | "secondary";
+  children: React.ReactNode;
+  onClick: () => void;
+  className?: string;
+  disabled?: boolean;
+}
+
+const ButtonElement = styled.button`
+  font-size: 1.6rem;
+  margin: 0 auto;
+  padding: 10px;
+  line-height: 1;
+  border-radius: 10px;
+  // propsのvariantにより条件分岐
+  &[data-variant='primary'] {
+    background-color: #00f;
+  }
+  &[data-variant='secondary'] {
+    background-color: #f00;
+  }
+  color: #fff;
+  max-width: 250px;
+  width: 100%;
+`;
+
+const Button = (props:ButtonProps) => {
+  // propsで受け取った値を分割代入 disabled=false など、初期値も指定できる
+  const { variant = "primary", children, onClick, className, disabled = false } = props
+  return (
+    <ButtonElement
+      data-variant={variant}
+      onClick={onClick}
+      className={className}
+      disabled={disabled}
+    >
+      {children}
+    </ButtonElement>
+  )
+}
+
+export default Button
+```
+### Step2
+- 使用例（Home.tsx）
+```
+import Button from "../ui/Button" // インポート
+import { PageTitle } from "../ui/Title"
+
+const Home = () => {
+  const handleClick = () => {
+    console.log("click")
+  }
+
+  return (
+    <>
+      <PageTitle title="Home" />
+      // コンポーネント内の要素（今回はボタンというテキスト）がchildrenに出力される
+      // ボタンコンポーネント（Button/index.tsx）側でvariantのテキストを受取り、primaryかsecondaryのスタイルを割り当てる
+      <Button variant="primary" onClick={handleClick} className="hoge">Primary ボタン</Button>
+      <Button variant="secondary" onClick={handleClick} className="hoge" disabled>Secondaryボタン(disabled)</Button>
+    </>
+  )
+}
+
+export default Home
 ```
