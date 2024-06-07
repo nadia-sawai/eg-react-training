@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Home from "../components/pages/Home"
 import Users from "../components/pages/Users"
+import State from "../components/pages/State"
 import ErrorBoundary from "../components/pages/ErrorBoundary";
 import Layout from "../components/templates/Layout";
 
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
       {
         path: "users",
         element: <Users />
+      },
+      {
+        path: "state",
+        element: <State />
       },
     ]
   }

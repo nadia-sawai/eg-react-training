@@ -1,131 +1,106 @@
-# props
+# ステート管理
 
-- [ ] propsの受け渡しをコンポーネントを作成しながら学ぶ
-- [ ] 受け取ったpropによる条件分岐を学ぶ
+- [ ] useStateの使い方をイベントハンドラを通して学ぶ
 
-## 属性を指定して値を渡す場合
-### Step1
-- ページタイトルを表示する共通コンポーネントを作成
-- indexに集約してエクスポートする方法で実装  
+## Stateページの作成
+- [2-1](https://github.com/nadia-sawai/eg-react-training/tree/feature/2-1) と同じようにページコンポーネントの追加とルーティングの設定を行う  
 
-```src/components/ui/Title``` に ```PageTitle.tsx``` を作成  
-```
-// 属性としてpropsを受け取る
-import styled from "styled-components";
-
-type PageTitleProps = {
-  title: string
-}
-
-const PageTitleBlock = styled.h1`
-  font-size: 2.6rem;
-  border-bottom: 1px solid #000;
-  margin-bottom: 40px;
-`;
-
-const PageTitle = (props:PageTitleProps) => {
-  const { title } = props
-
-  return (
-    <PageTitleBlock>{title}</PageTitleBlock>
-  )
-}
-
-export default PageTitle
-```
-```src/components/ui/Title``` に ```index.tsx``` を作成  
-```
-export {default as PageTitle} from './PageTitle';
-```
-
-
-### Step2
-- 使用例（Home.tsx）
+```pages/State.tsx``` の作成
 ```
 import { PageTitle } from "../ui/Title"
 
-const Home = () => {
+function State() {
   return (
-    <PageTitle title="Home" />
+    <PageTitle title="State" />
   )
 }
 
-export default Home
+export default State
+```  
+```router/index.tsx``` にimportとルーティングの追加
+```
+import State from "../components/pages/State"
+~~
+{
+  path: "state",
+  element: <State />
+},
+```  
+```templates/Header.tsx``` にリンク追加
+```
+const pagesPath = [
+  { id: 1, path: "/", name: "Home" },
+  { id: 2, path: "/users", name: "ユーザー一覧" },
+  { id: 3, path: "/state", name: "State" },
+];
 ```
 
-## childrenとして値を渡す場合
-### Step1
-- ボタンを表示する共通コンポーネントを作成
-```src/components/ui/Button/index.tsx``` を作成  
-children内にレンダリングされる
+## ボタンの設置とクリックイベントの実装
+### 例１）ボタンコンポーネントを使い、クリックで数字が増減する機能  
+```pages/State.tsx```  
 ```
-import styled from "styled-components";
-
-// ? をつけることによってはプロパティが任意になる（なくても怒られない）
-type ButtonProps = {
-  variant?: "primary" | "secondary";
-  children: React.ReactNode;
-  onClick: () => void;
-  className?: string;
-  disabled?: boolean;
-}
-
-const ButtonElement = styled.button`
-  font-size: 1.6rem;
-  margin: 0 auto;
-  padding: 10px;
-  line-height: 1;
-  border-radius: 10px;
-  // propsのvariantにより条件分岐
-  &[data-variant='primary'] {
-    background-color: #00f;
-  }
-  &[data-variant='secondary'] {
-    background-color: #f00;
-  }
-  color: #fff;
-  max-width: 250px;
-  width: 100%;
-`;
-
-const Button = (props:ButtonProps) => {
-  // propsで受け取った値を分割代入 disabled=false など、初期値も指定できる
-  const { variant = "primary", children, onClick, className, disabled = false } = props
-  return (
-    <ButtonElement
-      data-variant={variant}
-      onClick={onClick}
-      className={className}
-      disabled={disabled}
-    >
-      {children}
-    </ButtonElement>
-  )
-}
-
-export default Button
-```
-### Step2
-- 使用例（Home.tsx）
-```
-import Button from "../ui/Button" // インポート
+import { useState } from "react"
+import Button from "../ui/Button"
 import { PageTitle } from "../ui/Title"
+import styled from "styled-components"
 
-const Home = () => {
-  const handleClick = () => {
-    console.log("click")
+const ButtonWrap = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+`
+
+function State() {
+  // useStateを使い、初期値を0とする
+  const [count, setCount] = useState(0)
+
+  // クリックした際の関数
+  const increment = () => {
+    // 現在のcountが0の場合、prevは0となり、prev + 1が返される
+    setCount(prev => prev + 1)
   }
+  const decrement = () => {
+    // 現在のcountが1の場合、prevは1となり、prev - 1が返される
+    setCount(prev => prev - 1)
+    // 補足：coutを0以下にさせない場合は、現在のcount(prev)が0の際はそのまま返す
+    // setCount(prev => prev > 0 ? prev -1 : prev)
 
+  }
   return (
     <>
-      <PageTitle title="Home" />
-      // コンポーネント内の要素（今回はボタンというテキスト）がchildrenに出力される
-      // ボタンコンポーネント（Button/index.tsx）側でvariantのテキストを受取り、primaryかsecondaryのスタイルを割り当てる
-      <Button variant="primary" onClick={handleClick} className="hoge">Primary ボタン</Button>
-      <Button variant="secondary" onClick={handleClick} className="hoge" disabled>Secondaryボタン(disabled)</Button>
+      <PageTitle title="State" />
+      // クリックイベントで関数を呼び出す
+      <ButtonWrap>
+        <Button onClick={increment}>クリックで増加</Button>
+        <Button variant="secondary" onClick={decrement}>クリックで減少</Button>
+      </ButtonWrap>
+      <div>カウント：{count}</div>
     </>
   )
 }
 
-export default Home
+export default State
+```
+
+### 例2）ステートによるコンテンツの出し分け
+```
+function State() {
+  ...
+  // 初期値はfalse
+  const [bool, setBool] = useState(false)
+  ...
+  // false ↔ true 切り替え
+  const changeBool = () => {
+    setBool(prev => !prev)
+  }
+  ...
+  return (
+    <>
+      ...
+      {/* ステートによるコンテンツの出し分け */}
+      <Button onClick={changeBool}>クリック</Button>
+      {/* boolがtrueのとき、falseのときでコンテンツの出し分け */}
+      {bool ? <div>boolはtrue</div> : <div>boolはfalse</div>}
+    </>
+  )
 ```
