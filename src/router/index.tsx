@@ -4,6 +4,7 @@ import Users from "../components/pages/Users"
 import State from "../components/pages/State"
 import ErrorBoundary from "../components/pages/ErrorBoundary";
 import Layout from "../components/templates/Layout";
+import User from "../components/pages/User";
 
 
 const router = createBrowserRouter([
@@ -21,6 +22,10 @@ const router = createBrowserRouter([
       {
         path: "users",
         element: <Users />
+      },
+      {
+        path: 'users/:id',
+        element: <User />
       },
       {
         path: "state",

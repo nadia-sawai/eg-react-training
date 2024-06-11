@@ -1,37 +1,3 @@
-# 動的ルーティング
-
-- [ ] urlの変更による動的ルーティングを学ぶ
-- [ ] axiosを用いたfetch、エラー処理を学ぶ
-- [ ] users/1、users/0 でアクセスをして違いを確認する
-
-## axiosをインストール
-``` $ npm i axios ```
-
-## ユーザー詳細ページを作成する
-```pages/User.tsx``` 
-```
-const User = () => {
-  return (
-    <div>User</div>
-  )
-}
-
-export default User
-```
-
-## ルーティングの設定
-```router/index.tsx```
-```
-{
-  // :id と指定すると動的ルーティングとなる
-  path: 'users/:id',
-  element: <User />
-},
-```
-
-## urlからidを取得し、apiエンドポイントにセットし情報を取得する
-```pages/User.tsx``` 
-```
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
@@ -126,5 +92,3 @@ const User = () => {
 }
 
 export default User
-```
-
