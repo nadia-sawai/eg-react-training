@@ -1,130 +1,176 @@
-# 動的ルーティング
+# Context
 
-- [ ] urlの変更による動的ルーティングを学ぶ
-- [ ] axiosを用いたfetch、エラー処理を学ぶ
-- [ ] users/1、users/0 でアクセスをして違いを確認する
+- [ ] コンテキストの使い方を学ぶ
+- [ ] グローバルなStateをもたせる
 
-## axiosをインストール
-``` $ npm i axios ```
+## Homeに簡易的なログイン・ログアウトボタンの作成
+```pages/Home.tsx``` 
+※一部省略
 
-## ユーザー詳細ページを作成する
-```pages/User.tsx``` 
 ```
-const User = () => {
-  return (
-    <div>User</div>
-  )
-}
+import { useState } from "react"
 
-export default User
-```
+const Home = () => {
+  // 初期はログインしていないためfalse
+  const [isLogin, setIsLogin] = useState(false)
 
-## ルーティングの設定
-```router/index.tsx```
-```
-{
-  // :id と指定すると動的ルーティングとなる
-  path: 'users/:id',
-  element: <User />
-},
-```
-
-## urlからidを取得し、apiエンドポイントにセットし情報を取得する
-```pages/User.tsx``` 
-```
-import axios from "axios"
-import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
-import { PageTitle } from "../ui/Title"
-
-// データのtype
-type User = {
-  id: number
-  name: string
-  username: string
-  email: string
-  address: {
-    street: string
-    suite: string
-    city: string
-    zipcode: string
-    geo: {
-      lat: string
-      lng: string
-    }
-  }
-  phone: string
-  website: string
-  company: {
-    name: string
-    catchPhrase: string
-    bs: string
-  }
-}
-
-const User = () => {
-  // urlからidを取得（useParams().id のidは、ルーティングで設定した:idと命名を同じにすること）
-  const id = useParams().id
-  // 取得したデータ保存用
-  const [dataUser, setDataUser] = useState<User | null>(null)
-  // エラー用
-  const [errorMessage, setErrorMessage] = useState('')
-  // ローディング用
-  const [loadingBool, setLoadingBool] = useState(false)
-  
-  useEffect(() => {
-    const getUser = async () => {
-      // ローディングを表示
-      setLoadingBool(true)
-
-      try {
-        const response = await axios.get(`https://jsonplaceholder.typicode.com/users/${id}`)
-        setDataUser(response.data)
-      } catch(e) {
-        // エラー(e)がaxiosのものか判断
-        if (axios.isAxiosError(e)) {
-          // axiosエラーのmessageをエラーにセットする
-          setErrorMessage(e.message)
-        }
-      } finally {
-        // ローディングを非表示
-        setLoadingBool(false)
-      }
-    }
-    getUser()
-  },[id])
-
-  function Loading() {
-    return <div>読込中</div>
+  const handleLogin = () => {
+    setIsLogin(prev => !prev)
   }
 
   return (
     <>
-      <PageTitle title="User詳細" />
-      {/* ローディング */}
-      {loadingBool ? 
-        <Loading />
-        : (
-          <>
-            {dataUser && (
-              <table>
-                <tbody>
-                  <tr>
-                    <th>{dataUser.id}</th>
-                    <td>{dataUser.name}</td>
-                  </tr>
-                </tbody>
-              </table>
-            )}
-          </>
-      )}
+      <h2>ログイン/ログアウトボタン</h2>
+      {/* isLoginがtrue/falseでボタンテキストを変える */}
+      {isLogin ? <Button variant="secondary" onClick={handleLogin} className="hoge">ログアウト</Button> : <Button variant="primary" onClick={handleLogin} className="hoge">ログイン</Button>}
+      {isLogin ? <div>ログイン中</div> : <div>ログアウト中</div>}
+    </>
+  )
+}
+```
+これだけだと、ユーザー一覧など別ページに遷移した際にisLoginが初期値のfalseになってしまう。  
+これをページ遷移しても保持する方法は、propsの受け渡しかグローバルでstate（この場合はisLogin）を保持する必要がる。  
+propsの受け渡しの場合、コンポーネント間で行う必要があるためバケツリレーとなり、階層が深くなると複雑化してしまう。  
+そこでcontext apiを使用し、グローバル（どのコンポーネントからも利用できる）で管理する方法を取る。
 
-      {/* apiからのエラーテキスト表示 */}
-      {errorMessage && <div>{errorMessage}</div>}
+## 1. contextの作成
+```src/context/LoinContext.ts``` 
+- createContextでコンテキストの生成を行う
+```
+import { createContext } from 'react';
+// 型定義
+export interface ContextValueType {
+  isLogin: boolean; // ログイン状態のboolean
+  toggleLogin: () => void // ログイン状態を切り替える関数で特に引数がないため()とする
+}
+
+// コンテキストの値を作成
+const defaultValue: ContextValueType = {
+  isLogin: false, // 初期値はログインしていないためfalse
+  toggleLogin: () => {} // ログイン状態を切り替える関数
+}
+
+// createContextでコンテキストを生成
+export const LoginContext = createContext<ContextValueType>(defaultValue);
+```
+
+## 2. providerの作成
+```src/context/LoinProvider.tsx``` 
+- コンテキストのデータを受取り、provider内のコンポーネントにデータを渡す役割
+```
+import { useState } from 'react';
+import { LoginContext } from '../context/LoginContext';
+
+const LoginProvider = (props:{
+  children: React.ReactNode}
+) => {
+  const {children} = props
+  const [isLogin, setIsLogin] = useState(false)
+
+  const toggleLogin = () => {
+    setIsLogin(prev => !prev)
+  }
+  // 作成したcontext.Providerでwrapする（このchildren内ではコンテキストの取得が可能）
+  // valueは、isLogin（useStateの値）、toggleLogin関数を子コンポーネントに渡している
+  // children内で、　toggleLogin()が使用できるようになるため、isLogin（ログインの切り替えが可能）
+  return (
+    <LoginContext.Provider value={{isLogin, toggleLogin}}>
+      {children}
+    </LoginContext.Provider>
+  )
+}
+
+export default LoginProvider
+
+```
+
+## 3. main.tsxに反映
+- インポートしたLoginProvideを設置（Router配下がproviderのchildrenにあたる）
+```
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <LoginProvider>
+      <Router />
+    </LoginProvider>
+  </React.StrictMode>,
+)
+```
+
+## 4. 使用方法
+- さきほど記述したHome.tsxを修正する
+- useContextを用いてisLoginとtoggleLoginを取得・使用し、値を変更する
+```pages/Home.tsx``` 
+```
+import { useContext } from "react"
+import Button from "../ui/Button"
+import { PageTitle } from "../ui/Title"
+import { LoginContext } from "../../context/LoginContext"
+
+const Home = () => {
+  // useContextを使い、LoginContextからisLogin, toggleLoginを分割代入を用いて取り出す
+  const {isLogin, toggleLogin} = useContext(LoginContext);
+  const handleClick = () => {
+    console.log("click")
+  }
+
+  // handleLogin関数実行時に、toggleLogin()を実行する（providerのtoggleLoginが実行され、isLoginの値が変わる）
+  const handleLogin = () => {
+    toggleLogin()
+  }
+
+  return (
+    <>
+      <PageTitle title="Home" />
+      <Button variant="primary" onClick={handleClick} className="hoge">Primary ボタン</Button>
+      <Button variant="secondary" onClick={handleClick} className="hoge" disabled>Secondaryボタン(disabled)</Button>
+
+      <h2>ログイン/ログアウトボタン</h2>
+      {/* ボタン押下時にhandleLoginを実行 */}
+      {isLogin ? <Button variant="secondary" onClick={handleLogin} className="hoge">ログアウト</Button> : <Button variant="primary" onClick={handleLogin} className="hoge">ログイン</Button>}
+      {isLogin ? <div>ログイン中</div> : <div>ログアウト中</div>}
     </>
   )
 }
 
-export default User
+export default Home
 ```
 
+- ログインボタンを押して、ログイン中と表示された状態で別ページに遷移して再度トップにもどり、値がログイン中のままか確認する
+- コンテキストの中に詰め込みすぎるとその値が更新されたタイミングでchildrenでcontextを使用しているコンポーネントがレンダリングされるため、その場合はコンテキストを分割してレンダリングを減らす
+
+## おまけ（ヘッダーにログイン中/ログアウト中のテキスト表示
+```/components/templates/Header.tsx```  
+
+```
+// contextをインポート
+import { LoginContext } from "../../context/LoginContext";
+
+// header背景が黒なので文字色を白に変更
+const LoginState = styled.div`
+  color: #fff;
+  margin-left: 20px;
+`;
+
+const Header = () => {
+  // useContextからisLoginを取得
+  const {isLogin} = useContext(LoginContext)
+
+  return (
+    <HeaderBlock>
+      <Logo />
+      {/* Home同様にテキストの出し分け */}
+      {isLogin ? <LoginState>ログイン中</LoginState> : <LoginState>ログアウト中</LoginState>}
+      <NavBlock>
+        {pagesPath.map((pagePath) => {
+          return (
+            <li key={pagePath.id}>
+              <StyledLink to={pagePath.path}>{pagePath.name}</StyledLink>
+            </li>
+          );
+        })}
+      </NavBlock>
+    </HeaderBlock>
+  );
+};
+
+```

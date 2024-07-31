@@ -1,5 +1,7 @@
+import { useContext } from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
+import { LoginContext } from "../../context/LoginContext";
 
 // styleを指定したコンポーネントととして利用できる
 const HeaderBlock = styled.header`
@@ -22,6 +24,11 @@ const StyledLink = styled(Link)`
   color: white;
 `;
 
+const LoginState = styled.div`
+  color: #fff;
+  margin-left: 20px;
+`
+
 const pagesPath = [
   { id: 1, path: "/", name: "Home" },
   { id: 2, path: "/users", name: "ユーザー一覧" },
@@ -35,9 +42,12 @@ function Logo() {
 }
 
 const Header = () => {
+  const {isLogin} = useContext(LoginContext)
+
   return (
     <HeaderBlock>
       <Logo />
+      {isLogin ? <LoginState>ログイン中</LoginState> : <LoginState>ログアウト中</LoginState>}
       <NavBlock>
         {pagesPath.map((pagePath) => {
           return (
